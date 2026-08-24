@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1b365d">
+<title>{% block title %}Envisys Centre{% endblock %} · Review for Reward</title>
+<link rel="stylesheet" href="/static/app.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%231b365d'/><rect x='2' y='2' width='6' height='28' fill='%23d9232a'/><text x='20' y='23' font-size='18' font-family='Arial' font-weight='900' text-anchor='middle' fill='white'>E</text></svg>">
+{% block head %}{% endblock %}
+</head>
+<body>
+{% block body %}
+<div class="app-shell app-shell--top">
+
+  <header class="topnav">
+    <div class="topnav__left">
+      <a href="/dashboard" class="topnav__brand" title="Envisys Reward Console">
+        <img src="/static/envisys-logo.png?v=2" alt="Envisys" class="topnav__logo">
+      </a>
+
+      <nav class="topnav__links">
+        <a href="/dashboard" class="topnav__link {% if active == 'submit' %}is-active{% endif %}">Submit Review</a>
+        <a href="/leaderboard" class="topnav__link {% if active == 'leaderboard' %}is-active{% endif %}">Leaderboard</a>
+        {% if is_admin %}
+        <a href="/admin" class="topnav__link topnav__link--admin {% if active == 'admin' %}is-active{% endif %}">Review Queue</a>
+        <a href="/admin/leaderboard.csv" class="topnav__link">Export CSV</a>
+        {% endif %}
+      </nav>
+    </div>
+
+    <div class="topnav__right">
+      <div class="bell-wrap" id="bellWrap">
+        <button class="bell" id="bellBtn" aria-label="Notifications" type="button">
+          🔔
+          <span class="bell__count" id="bellCount" style="display:none">0</span>
+        </button>
+        <div class="notif-panel" id="notifPanel">
+          <div class="notif-panel__head">
+            Notifications
+            <a href="#" id="markAllRead">Mark all read</a>
+          </div>
+          <div id="notifList"><div class="notif-empty">No notifications</div></div>
+        </div>
+      </div>
+      {% if user %}
+      <div class="topnav__user">
+        <div class="topnav__avatar {% if is_admin %}is-admin{% endif %}">
+          {{ user.full_name[:1]|upper if user.full_name else (user.email[:1]|upper if user.email else '#') }}
+        </div>
+        <div class="topnav__meta">
+          <div class="name">
+            {{ user.full_name or (user.email or user.phone) }}
+            {% if is_admin %}<span class="badge badge--admin" style="margin-left:6px">Admin</span>{% endif %}
+          </div>
+        </div>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <a href="/profile" class="btn btn--secondary btn--sm">Edit Profile</a>
+        <form method="post" action="/auth/logout" style="margin:0">
+          <button class="btn btn--secondary btn--sm" type="submit">Sign out</button>
+        </form>
+      </div>
+      {% endif %}
+    </div>
+  </header>
+
+  <main class="content content--top">
+    {% if flash %}
+    <div class="alert alert--{{ 'success' if flash.kind == 'success' else ('error' if flash.kind == 'error' else 'info') }}">
+      <span class="ico">{{ '✓' if flash.kind == 'success' else ('!' if flash.kind == 'error' else 'i') }}</span>
+      <div>{{ flash.message }}</div>
+    </div>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+</div>
+{% endblock %}
+
+<script>
+(function(){
+  const btn = document.getElementById('bellBtn');
+  const wrap = document.getElementById('bellWrap');
+  const panel = document.getElementById('notifPanel');
+  const list = document.getElementById('notifList');
+  const countEl = document.getElementById('bellCount');
+  if(!btn) return;
+  async function load(){
+    try{
+      const r = await fetch('/api/notifications');
+      if(!r.ok) return;
+      const d = await r.json();
+      if(d.unread > 0){
+        countEl.textContent = d.unread > 99 ? '99+' : d.unread;
+        countEl.style.display = 'grid';
+      } else { countEl.style.display = 'none'; }
+      if(!d.items || !d.items.length){
+        list.innerHTML = '<div class="notif-empty">No notifications</div>';
+      } else {
+        list.innerHTML = d.items.map(n => `
+          <div class="notif-item ${n.read?'':'unread'}">
+            <div class="notif-item__body">${n.body}</div>
+            <div class="notif-item__time">${n.time}</div>
+          </div>`).join('');
+      }
+    }catch(e){}
+  }
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    wrap.classList.toggle('open');
+    if(wrap.classList.contains('open')) load();
+  });
+  document.addEventListener('click', e => {
+    if(!wrap.contains(e.target)) wrap.classList.remove('open');
+  });
+  document.getElementById('markAllRead')?.addEventListener('click', async e => {
+    e.preventDefault();
+    await fetch('/api/notifications/read', {method:'POST'});
+    document.querySelectorAll('.notif-item.unread').forEach(el => el.classList.remove('unread'));
+    countEl.style.display = 'none';
+  });
+  load();
+  setInterval(load, 60000);
+})();
+</script>
+{% block script %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#191970">
+<title>Review for Reward · Envisys</title>
+<link rel="stylesheet" href="/static/splash.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23191970'/><polygon points='16,6 18,13 26,13 20,18 22,26 16,21 10,26 12,18 6,13 14,13' fill='%23FFD700'/></svg>">
+</head>
+<body>
+<main class="stage" id="stage">
+  <a href="/signin" class="skip">Sign in →</a>
+
+  <div class="scene">
+    <div class="star-zone" id="starZone" aria-hidden="true">
+      <div class="star star--left-2">  {% include "star.svg" %}</div>
+      <div class="star star--left-1">  {% include "star.svg" %}</div>
+      <div class="star star--center"> {% include "star.svg" %}</div>
+      <div class="star star--right-1"> {% include "star.svg" %}</div>
+      <div class="star star--right-2"> {% include "star.svg" %}</div>
+    </div>
+
+    <div class="typography" id="typography">
+      <h1 class="headline">
+        <span class="word">Review</span>
+        <span class="word">for</span>
+        <span class="word accent">Reward</span>
+      </h1>
+      <span class="gold-rule"></span>
+      <p class="subtitle">Give the review, take the reward</p>
+
+      <div class="cta-row">
+        <a class="btn btn--primary" href="/signin">
+          Log in <span class="arr">→</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+(function(){
+  const stage = document.getElementById('stage');
+  const zone  = document.getElementById('starZone');
+  const type  = document.getElementById('typography');
+
+  function spawnGlitter(){
+    const rect = zone.getBoundingClientRect();
+    const cx = rect.left + rect.width/2;
+    const cy = rect.top  + rect.height * 0.55;
+    for(let i=0; i<36; i++){
+      const p = document.createElement('span');
+      p.className = 'glitter';
+      const size = 1.5 + Math.random()*3.5;
+      const dx   = (Math.random() - 0.5) * 320;
+      const dy   = -(120 + Math.random()*220);
+      const dur  = 1.4 + Math.random()*1.2;
+      const delay = Math.random()*0.45;
+      p.style.left = cx + 'px';
+      p.style.top  = cy + 'px';
+      p.style.width = p.style.height = size + 'px';
+      p.style.setProperty('--dx', dx + 'px');
+      p.style.setProperty('--dy', dy + 'px');
+      p.style.animation = `glitter ${dur}s ease ${delay}s forwards`;
+      stage.appendChild(p);
+      setTimeout(() => p.remove(), (dur + delay) * 1000 + 200);
+    }
+  }
+
+  // Timeline:
+  // 0.60s  center star pops up from below (bouncy elastic)
+  // 1.45s  four satellite stars pop up and fan to horizontal arc
+  // 2.55s  stars dissolve up into blur + gold glitter released
+  // 2.75s  "Review for Reward" cross-fades in, midnight blue
+  // 3.55s  gold rule draws
+  // 3.85s  single "Log in →" button
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      zone.classList.add('dissolve');
+      spawnGlitter();
+    }, 4400);
+    setTimeout(() => type.classList.add('show'), 1950);
+  });
+
+  document.addEventListener('keydown', e => {
+    if(e.key === 'Enter' || e.key === ' ') window.location.href = '/signin';
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Leaderboard{% endblock %}
+{% block crumb %}<strong>Operations</strong> &nbsp;/&nbsp; Leaderboard{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Performance Leaderboard</h1>
+    <p class="subtitle">Operator ranking by verified and approved customer reviews.</p>
+  </div>
+  {% if is_admin %}
+  <div class="actions">
+    <a class="btn btn--secondary" href="/admin/leaderboard.csv">⤓ Export CSV</a>
+  </div>
+  {% endif %}
+</div>
+
+<div class="panel">
+  <div class="panel__head"><h3>Approved reviews by operator</h3></div>
+  {% if not rows %}
+  <div class="empty-state">
+    <div class="icon">▤</div>
+    <h3>No approved reviews yet</h3>
+    <p>Once submissions pass verification, operators will appear here ranked by count.</p>
+  </div>
+  {% else %}
+  <div class="table-wrap">
+    <table class="data">
+      <thead>
+        <tr>
+          <th style="width:80px">Rank</th>
+          <th>Operator</th>
+          <th>Department</th>
+          <th>Role</th>
+          <th class="text-right">Approved reviews</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for r in rows %}
+        <tr>
+          <td><span class="rank rank--{{ loop.index }}">{{ loop.index }}</span></td>
+          <td>
+            <strong>{{ r.name or 'Anonymous' }}</strong>
+            {% if is_admin %}<div class="muted" style="font-size:12px">{{ r.email or r.phone }}</div>{% endif %}
+          </td>
+          <td>{{ r.department or '—' }}</td>
+          <td>{{ r.role or '—' }}</td>
+          <td class="text-right"><span class="score-pill">{{ r.approved }}</span></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

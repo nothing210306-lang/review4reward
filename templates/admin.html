@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% block title %}Review Queue{% endblock %}
+{% block crumb %}<strong>Administration</strong> &nbsp;/&nbsp; Review Queue{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Verification Control Room</h1>
+    <p class="subtitle">Review incoming submissions, verify against the duplicate registry, and approve or reject.</p>
+  </div>
+</div>
+
+<div class="kpi-grid">
+  <div class="kpi kpi--accent">
+    <div class="kpi__label">Awaiting review</div>
+    <div class="kpi__value">{{ counts.pending }}</div>
+    <div class="kpi__sub">In processing queue</div>
+  </div>
+  <div class="kpi kpi--ok">
+    <div class="kpi__label">Approved</div>
+    <div class="kpi__value">{{ counts.approved }}</div>
+    <div class="kpi__sub">Credited to leaderboard</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi__label">Rejected</div>
+    <div class="kpi__value">{{ counts.rejected }}</div>
+    <div class="kpi__sub">Did not meet criteria</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi__label">System</div>
+    <div class="kpi__value" style="font-size:18px">● Online</div>
+    <div class="kpi__sub">Duplicate detection active (threshold 8)</div>
+  </div>
+</div>
+
+<div class="tabs" id="tabs">
+  <button class="tab is-active" data-tab="pending">Pending <span class="count">{{ counts.pending }}</span></button>
+  <button class="tab" data-tab="approved">Approved <span class="count">{{ counts.approved }}</span></button>
+  <button class="tab" data-tab="rejected">Rejected <span class="count">{{ counts.rejected }}</span></button>
+  <button class="tab" data-tab="audit">Audit log</button>
+</div>
+
+<section id="tab-pending">
+  {% if not pending %}
+  <div class="panel"><div class="empty-state">
+    <div class="icon">✓</div>
+    <h3>Queue clear</h3>
+    <p>There are no submissions awaiting review at this time.</p>
+  </div></div>
+  {% else %}
+  <div class="panel">
+    <div class="panel__head" style="display: flex; justify-content: space-between; align-items: center;">
+      <h3>Pending Submissions</h3>
+      <form method="post" action="/admin/submissions/approve-all" style="margin: 0;">
+        <button class="btn btn--primary" type="submit" onclick="return confirm('Are you sure you want to approve ALL pending submissions?')">✓ Approve All</button>
+      </form>
+    </div>
+    <div class="table-wrap">
+      <table class="data">
+        <thead>
+          <tr>
+            <th>Preview</th>
+            <th>Submitter</th>
+            <th>Customer / Notes</th>
+            <th>Submitted</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for s in pending %}
+          <tr>
+            <td class="thumb-cell"><img src="{{ s.image_public_url }}" alt="" onclick="openModal(this.src)"></td>
+            <td>
+              <strong>{{ s.user.full_name or 'Unknown' }}</strong>
+              <div class="muted" style="font-size:12px">{{ s.user.email or s.user.phone }}</div>
+              {% if s.user.department %}<div class="muted" style="font-size:12px">{{ s.user.department }}{% if s.user.role %} · {{ s.user.role }}{% endif %}</div>{% endif %}
+            </td>
+            <td style="max-width:280px">
+              {% if s.customer_name %}<strong>{{ s.customer_name }}</strong>{% else %}<span class="muted">Unnamed</span>{% endif %}
+              {% if s.notes %}<div class="muted" style="font-size:12px;margin-top:3px">{{ s.notes }}</div>{% endif %}
+            </td>
+            <td style="white-space:nowrap;color:var(--text-muted)">{{ s.created_at.strftime('%d %b %Y, %H:%M') }}</td>
+            <td class="text-right">
+              <div class="row-actions" style="justify-content:flex-end">
+                <form method="post" action="/admin/submissions/{{ s.id }}/approve">
+                  <button class="btn btn--primary" type="submit"
+                          onclick="return confirm('Approve this submission and credit it to {{ s.user.full_name or 'the submitter' }}?')">✓ Approve</button>
+                </form>
+                <form method="post" action="/admin/submissions/{{ s.id }}/reject"
+                      style="display:flex;gap:6px;align-items:center">
+                  <input type="text" name="reason" placeholder="Reason (optional)" maxlength="500">
+                  <button class="btn btn--danger" type="submit"
+                          onclick="return confirm('Reject this submission?')">✕ Reject</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+</section>
+
+<section id="tab-approved" style="display:none">
+  {% if not approved %}
+  <div class="panel"><div class="empty-state"><div class="icon">✓</div><h3>No approved submissions</h3></div></div>
+  {% else %}
+  <div class="panel">
+    <div class="table-wrap"><table class="data">
+      <thead><tr><th>Preview</th><th>Submitter</th><th>Customer</th><th>Decided</th></tr></thead>
+      <tbody>
+      {% for s in approved %}
+        <tr>
+          <td class="thumb-cell"><img src="{{ s.image_public_url }}" alt="" onclick="openModal(this.src)"></td>
+          <td><strong>{{ s.user.full_name or 'Unknown' }}</strong><div class="muted" style="font-size:12px">{{ s.user.email or s.user.phone }}</div></td>
+          <td>{{ s.customer_name or '—' }}</td>
+          <td style="white-space:nowrap;color:var(--text-muted)">{{ s.decided_at.strftime('%d %b, %H:%M') if s.decided_at else '—' }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+  {% endif %}
+</section>
+
+<section id="tab-rejected" style="display:none">
+  {% if not rejected %}
+  <div class="panel"><div class="empty-state"><div class="icon">!</div><h3>No rejected submissions</h3></div></div>
+  {% else %}
+  <div class="panel">
+    <div class="table-wrap"><table class="data">
+      <thead><tr><th>Preview</th><th>Submitter</th><th>Reason</th><th>Decided</th></tr></thead>
+      <tbody>
+      {% for s in rejected %}
+        <tr>
+          <td class="thumb-cell"><img src="{{ s.image_public_url }}" alt="" onclick="openModal(this.src)"></td>
+          <td><strong>{{ s.user.full_name or 'Unknown' }}</strong><div class="muted" style="font-size:12px">{{ s.user.email or s.user.phone }}</div></td>
+          <td>{{ s.rejection_reason or '—' }}</td>
+          <td style="white-space:nowrap;color:var(--text-muted)">{{ s.decided_at.strftime('%d %b, %H:%M') if s.decided_at else '—' }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+  {% endif %}
+</section>
+
+<section id="tab-audit" style="display:none">
+  <div class="panel">
+    <div class="panel__head"><h3>Audit trail</h3></div>
+    <div class="table-wrap">
+      <table class="data audit">
+        <thead><tr><th>Time (UTC)</th><th>Action</th><th>Actor</th><th>Detail</th><th>IP</th></tr></thead>
+        <tbody>
+        {% for e in audit %}
+          <tr>
+            <td>{{ e.ts.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+            <td>{{ e.action }}</td>
+            <td>{{ e.actor_label or '—' }}</td>
+            <td>{{ e.detail or '' }}</td>
+            <td>{{ e.ip or '' }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<div class="modal-bg" id="modal" onclick="this.classList.remove('open')">
+  <img id="modalImg" alt="">
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+function openModal(src){ document.getElementById('modalImg').src = src; document.getElementById('modal').classList.add('open'); }
+window.openModal = openModal;
+document.addEventListener('keydown', e => { if(e.key === 'Escape') document.getElementById('modal').classList.remove('open'); });
+
+document.querySelectorAll('#tabs .tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('#tabs .tab').forEach(x => x.classList.remove('is-active'));
+    t.classList.add('is-active');
+    ['pending','approved','rejected','audit'].forEach(id => {
+      document.getElementById('tab-'+id).style.display = (id === t.dataset.tab) ? 'block' : 'none';
+    });
+  });
+});
+
+// Enter in rejection-reason field submits the reject form, not the approve one
+document.querySelectorAll('.reject-form, form[action*="/reject"]').forEach(f => {
+  const input = f.querySelector('input[name=reason]');
+  if(input) input.addEventListener('keydown', e => {
+    if(e.key === 'Enter'){
+      e.preventDefault();
+      if(confirm('Reject this submission?')) f.requestSubmit();
+    }
+  });
+});
+</script>
+{% endblock %}

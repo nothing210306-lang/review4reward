@@ -1,0 +1,293 @@
+/* ============================================================
+   ENVISYS SPLASH — Review for Reward
+   24k gold stars pop up from below → midnight blue typography
+   ============================================================ */
+
+:root {
+  --gold:       #FFD700;
+  --gold-light: #FFE866;
+  --gold-deep:  #C9A400;
+  --midnight:   #191970;
+  --midnight-2: #0f0f4d;
+  --ink:        #1a1a2e;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  background: #ffffff;
+  font-family: 'Inter', 'Montserrat', 'Segoe UI', system-ui, -apple-system, Arial, sans-serif;
+  color: var(--ink);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+.stage {
+  position: relative;
+  height: 100vh;
+  width: 100%;
+  display: grid;
+  place-items: center;
+  background: #ffffff;
+  overflow: hidden;
+}
+.stage::before {
+  content: "";
+  position: absolute; inset: 0;
+  background: radial-gradient(circle at 50% 45%, rgba(25,25,112,0.035) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.scene {
+  position: relative;
+  width: min(760px, 92vw);
+  text-align: center;
+  z-index: 2;
+}
+
+/* ---------- Star zone ---------- */
+.star-zone {
+  position: relative;
+  height: 200px;
+  margin-bottom: 8px;
+}
+
+.star {
+  position: absolute;
+  left: 50%;
+  bottom: 0;                 /* anchored at the BOTTOM so they pop UP */
+  width: 64px;
+  height: 64px;
+  margin-left: -32px;
+  opacity: 0;
+  transform: translate(-50%, 120px) scale(0);   /* start way below, hidden */
+  filter: drop-shadow(0 6px 18px rgba(255,215,0,0.45));
+  will-change: transform, opacity, filter;
+}
+.star svg { width: 100%; height: 100%; display: block; }
+
+/* Center star: POPS UP from below with elastic bounce */
+.star--center {
+  animation: popUpCenter 1.1s cubic-bezier(.34,1.7,.64,1) 0.6s forwards;
+}
+@keyframes popUpCenter {
+  0%   { opacity: 0; transform: translate(-50%, 140px) scale(0)   rotate(-25deg); }
+  55%  { opacity: 1; transform: translate(-50%, -130px) scale(1.2) rotate(8deg); }
+  75%  { transform: translate(-50%, -112px) scale(0.94) rotate(-3deg); }
+  100% { opacity: 1; transform: translate(-50%, -120px) scale(1)   rotate(0deg); }
+}
+
+/* Four satellites: all start at center-bottom, then pop outward + upward */
+.star--left-2,
+.star--left-1,
+.star--right-1,
+.star--right-2 {
+  opacity: 0;
+  transform: translate(-50%, 120px) scale(0);
+}
+
+.star--left-2  { animation: popL2 1.0s cubic-bezier(.34,1.65,.64,1) 1.95s forwards; }
+.star--left-1  { animation: popL1 1.0s cubic-bezier(.34,1.65,.64,1) 2.05s forwards; }
+.star--right-1 { animation: popR1 1.0s cubic-bezier(.34,1.65,.64,1) 2.15s forwards; }
+.star--right-2 { animation: popR2 1.0s cubic-bezier(.34,1.65,.64,1) 2.25s forwards; }
+
+/* Final positions: a balanced horizontal 5-star arc.
+   Center sits at translate(-50%, -120px). Side stars fan out and sit slightly
+   higher on the outer edges for a subtle crown arc. */
+@keyframes popL2 {
+  0%   { opacity: 0; transform: translate(-50%, 140px) scale(0); }
+  55%  { opacity: 1; transform: translate(calc(-50% - 240px), -145px) scale(1.15); }
+  78%  { transform: translate(calc(-50% - 232px), -122px) scale(0.94); }
+  100% { opacity: 1; transform: translate(calc(-50% - 240px), -138px) scale(1); }
+}
+@keyframes popL1 {
+  0%   { opacity: 0; transform: translate(-50%, 140px) scale(0); }
+  55%  { opacity: 1; transform: translate(calc(-50% - 120px), -128px) scale(1.15); }
+  78%  { transform: translate(calc(-50% - 114px), -108px) scale(0.94); }
+  100% { opacity: 1; transform: translate(calc(-50% - 120px), -120px) scale(1); }
+}
+@keyframes popR1 {
+  0%   { opacity: 0; transform: translate(-50%, 140px) scale(0); }
+  55%  { opacity: 1; transform: translate(calc(-50% + 120px), -128px) scale(1.15); }
+  78%  { transform: translate(calc(-50% + 114px), -108px) scale(0.94); }
+  100% { opacity: 1; transform: translate(calc(-50% + 120px), -120px) scale(1); }
+}
+@keyframes popR2 {
+  0%   { opacity: 0; transform: translate(-50%, 140px) scale(0); }
+  55%  { opacity: 1; transform: translate(calc(-50% + 240px), -145px) scale(1.15); }
+  78%  { transform: translate(calc(-50% + 232px), -122px) scale(0.94); }
+  100% { opacity: 1; transform: translate(calc(-50% + 240px), -138px) scale(1); }
+}
+
+/* Dissolve: stars float up into soft blur */
+.star-zone.dissolve .star {
+  animation-duration: 0.7s !important;
+  animation-iteration-count: 1 !important;
+  animation-direction: normal !important;
+  animation-fill-mode: forwards !important;
+}
+.star-zone.dissolve .star--center  { animation-name: dissolveCenter; animation-delay: 0s !important; }
+.star-zone.dissolve .star--left-1  { animation-name: dissolveL1;     animation-delay: 0.05s !important; }
+.star-zone.dissolve .star--right-1 { animation-name: dissolveR1;     animation-delay: 0.10s !important; }
+.star-zone.dissolve .star--left-2  { animation-name: dissolveL2;     animation-delay: 0.15s !important; }
+.star-zone.dissolve .star--right-2 { animation-name: dissolveR2;     animation-delay: 0.20s !important; }
+
+@keyframes dissolveCenter {
+  0% { opacity: 1; transform: translate(-50%, -120px) scale(1); filter: blur(0) drop-shadow(0 6px 18px rgba(255,215,0,0.45)); }
+  100% { opacity: 0; transform: translate(-50%, -210px) scale(0.35); filter: blur(10px) drop-shadow(0 6px 18px rgba(255,215,0,0)); }
+}
+@keyframes dissolveL1 {
+  0% { opacity: 1; transform: translate(calc(-50% - 120px), -120px) scale(1); filter: blur(0); }
+  100% { opacity: 0; transform: translate(calc(-50% - 120px), -210px) scale(0.35); filter: blur(10px); }
+}
+@keyframes dissolveR1 {
+  0% { opacity: 1; transform: translate(calc(-50% + 120px), -120px) scale(1); filter: blur(0); }
+  100% { opacity: 0; transform: translate(calc(-50% + 120px), -210px) scale(0.35); filter: blur(10px); }
+}
+@keyframes dissolveL2 {
+  0% { opacity: 1; transform: translate(calc(-50% - 240px), -138px) scale(1); filter: blur(0); }
+  100% { opacity: 0; transform: translate(calc(-50% - 240px), -228px) scale(0.35); filter: blur(10px); }
+}
+@keyframes dissolveR2 {
+  0% { opacity: 1; transform: translate(calc(-50% + 240px), -138px) scale(1); filter: blur(0); }
+  100% { opacity: 0; transform: translate(calc(-50% + 240px), -228px) scale(0.35); filter: blur(10px); }
+}
+
+/* ---------- Typography ---------- */
+.typography {
+  position: relative;
+  opacity: 0;
+  transform: translateY(12px);
+  filter: blur(8px);
+}
+.typography.show {
+  animation: typeIn 0.9s cubic-bezier(.2,.7,.2,1) 1.95s forwards;
+}
+@keyframes typeIn {
+  0%   { opacity: 0; transform: translateY(14px); filter: blur(10px); }
+  100% { opacity: 1; transform: translateY(0);    filter: blur(0); }
+}
+
+.headline {
+  font-family: 'Montserrat', 'Inter', sans-serif;
+  font-size: clamp(40px, 7vw, 68px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  color: var(--midnight);
+  white-space: nowrap;
+}
+.headline .word + .word { margin-left: 0.22em; }
+.headline .accent {
+  background: linear-gradient(180deg, #2a2a9a 0%, var(--midnight) 60%, var(--midnight-2) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gold-rule {
+  display: block;
+  width: 0;
+  height: 3px;
+  margin: 18px auto 0;
+  background: linear-gradient(90deg, transparent, var(--gold) 50%, transparent);
+  border-radius: 3px;
+}
+.typography.show .gold-rule {
+  animation: ruleGrow 0.6s cubic-bezier(.4,0,.2,1) 2.75s forwards;
+}
+@keyframes ruleGrow { to { width: 180px; } }
+
+.subtitle {
+  margin-top: 22px;
+  font-size: clamp(15px, 2vw, 19px);
+  font-weight: 500;
+  color: var(--midnight);
+  opacity: 0.75;
+  letter-spacing: 0.005em;
+}
+
+/* Single CTA only */
+.cta-row {
+  margin-top: 42px;
+  display: flex;
+  justify-content: center;
+  opacity: 0;
+  animation: ctaIn 0.6s ease 3.05s forwards;
+}
+@keyframes ctaIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px 40px;
+  border-radius: 4px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: transform .15s, background .15s, box-shadow .15s, color .15s;
+}
+.btn--primary {
+  background: var(--midnight);
+  color: #fff;
+  box-shadow: 0 10px 26px rgba(25,25,112,0.28);
+}
+.btn--primary:hover {
+  background: var(--midnight-2);
+  transform: translateY(-2px);
+  color: #fff;
+  box-shadow: 0 14px 32px rgba(25,25,112,0.36);
+}
+.btn .arr { transition: transform .2s; }
+.btn:hover .arr { transform: translateX(5px); }
+
+.skip {
+  position: absolute;
+  top: 22px; right: 26px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--midnight);
+  opacity: 0.55;
+  text-decoration: none;
+  padding: 8px 14px;
+  border: 1px solid rgba(25,25,112,0.18);
+  border-radius: 4px;
+  z-index: 5;
+  transition: opacity .15s, background .15s;
+}
+.skip:hover { opacity: 1; background: rgba(25,25,112,0.04); }
+
+/* ---------- Glitter ---------- */
+.glitter {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 8px rgba(255,215,0,0.9);
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+}
+@keyframes glitter {
+  0%   { opacity: 0; transform: translate(0,0) scale(0.4) rotate(0deg); }
+  15%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(1.1) rotate(180deg); }
+}
+
+@media (max-width: 720px) {
+  .star-zone { transform: scale(0.72); margin-bottom: -30px; }
+  .headline { white-space: normal; font-size: 38px; }
+  .subtitle { font-size: 15px; }
+  .btn { padding: 13px 28px; font-size: 13px; }
+}

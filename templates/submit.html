@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+{% block title %}Submit Review{% endblock %}
+{% block crumb %}<strong>Operations</strong> &nbsp;/&nbsp; Submit Review{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Submit a Google Review</h1>
+    <p class="subtitle">Upload a customer review screenshot for verification. Duplicate or reused submissions are detected automatically.</p>
+  </div>
+</div>
+
+<div class="kpi-grid">
+  <div class="kpi kpi--accent">
+    <div class="kpi__label">Total Submissions</div>
+    <div class="kpi__value">{{ submissions|length }}</div>
+    <div class="kpi__sub">All-time reviews you've submitted</div>
+  </div>
+  <div class="kpi kpi--ok">
+    <div class="kpi__label">Approved</div>
+    <div class="kpi__value">{{ approved_count }}</div>
+    <div class="kpi__sub">Credited to the leaderboard</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi__label">Pending</div>
+    <div class="kpi__value">{{ submissions|selectattr('status','equalto','under_verification')|list|length }}</div>
+    <div class="kpi__sub">Awaiting admin review</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi__label">Rejected</div>
+    <div class="kpi__value">{{ submissions|selectattr('status','equalto','rejected')|list|length }}</div>
+    <div class="kpi__sub">Did not meet criteria</div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div>
+    <div class="panel">
+      <div class="panel__head"><h3>Document Intake</h3></div>
+      <div class="panel__body">
+        <form id="uploadForm" method="post" action="/submit" enctype="multipart/form-data">
+          <label for="file">Review screenshot <span style="color:var(--envisys-red)">*</span></label>
+          <div class="dropzone" id="drop">
+            <div class="dropzone__icon">📷</div>
+            <div class="dropzone__title" id="dropText">Tap to choose or drop an image</div>
+            <div class="dropzone__hint">JPG, PNG or WebP · up to {{ max_mb }} MB</div>
+            <input type="file" id="file" name="file" accept="image/jpeg,image/png,image/webp" required hidden>
+          </div>
+          <div class="preview" id="preview" style="display:none">
+            <img id="previewImg" alt="preview">
+            <div class="preview__info">
+              <strong id="previewName">filename.jpg</strong>
+              <span id="previewSize">0 KB</span>
+            </div>
+            <button type="button" class="btn btn--secondary" id="removeBtn">Remove</button>
+          </div>
+          <input type="hidden" id="objectPath" name="object_path" value="">
+
+          <div class="field mt-4">
+            <label for="customer_name">Customer name <span class="muted" style="font-weight:400">(optional)</span></label>
+            <input type="text" id="customer_name" name="customer_name" maxlength="200" placeholder="e.g. Acme Industries">
+            <div class="field-hint">Used to identify the reviewer in the verification queue.</div>
+          </div>
+
+          <div class="field">
+            <label for="notes">Verification notes <span class="muted" style="font-weight:400">(optional)</span></label>
+            <textarea id="notes" name="notes" rows="3" maxlength="2000" placeholder="Any context that helps confirm this is a genuine, distinct review…"></textarea>
+          </div>
+
+          <button class="btn btn--primary btn--lg btn--block" type="submit" id="submitBtn">
+            Submit for verification →
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="panel">
+      <div class="panel__head"><h3>Processing Queue</h3></div>
+      {% if not submissions %}
+      <div class="empty-state">
+        <div class="icon">◪</div>
+        <h3>No submissions yet</h3>
+        <p>Your submitted reviews will appear here with their verification status.</p>
+      </div>
+      {% else %}
+      <div class="table-wrap">
+        <table class="data">
+          <thead>
+            <tr>
+              <th></th>
+              <th>Customer</th>
+              <th>Submitted</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for s in submissions %}
+            <tr>
+              <td class="thumb-cell"><img src="{{ s.image_public_url }}" alt="" onclick="openModal(this.src)"></td>
+              <td>
+                <strong>{{ s.customer_name or 'Unnamed customer' }}</strong>
+                {% if s.status == 'rejected' and s.rejection_reason %}
+                <div class="muted" style="font-size:12px;margin-top:2px">Reason: {{ s.rejection_reason }}</div>
+                {% endif %}
+              </td>
+              <td style="white-space:nowrap;color:var(--text-muted)">{{ s.created_at.strftime('%d %b, %H:%M') }}</td>
+              <td><span class="badge badge--{{ s.status }}"><span class="pulse"></span> {{ s.status.replace('_',' ') }}</span></td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal" onclick="this.classList.remove('open')">
+  <img id="modalImg" alt="">
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+const DIRECT_UPLOAD = {{ direct_upload | tojson }};
+const MAX_BYTES = {{ max_mb }} * 1024 * 1024;
+
+const drop = document.getElementById('drop');
+const fileInput = document.getElementById('file');
+const preview = document.getElementById('preview');
+const previewImg = document.getElementById('previewImg');
+const previewName = document.getElementById('previewName');
+const previewSize = document.getElementById('previewSize');
+const objectPath = document.getElementById('objectPath');
+const submitBtn = document.getElementById('submitBtn');
+const form = document.getElementById('uploadForm');
+
+function openModal(src){ document.getElementById('modalImg').src = src; document.getElementById('modal').classList.add('open'); }
+window.openModal = openModal;
+
+function fmtSize(b){
+  if(b < 1024) return b + ' B';
+  if(b < 1048576) return (b/1024).toFixed(1) + ' KB';
+  return (b/1048576).toFixed(1) + ' MB';
+}
+
+function showFile(f){
+  if(!f) return;
+  if(f.size > MAX_BYTES){ alert('File is ' + fmtSize(f.size) + ' — max is ' + {{ max_mb }} + ' MB.'); return; }
+  if(['image/jpeg','image/png','image/webp'].indexOf(f.type) === -1){ alert('Only JPG, PNG or WebP images are accepted.'); return; }
+  previewName.textContent = f.name;
+  previewSize.textContent = fmtSize(f.size);
+  const r = new FileReader();
+  r.onload = e => { previewImg.src = e.target.result; };
+  r.readAsDataURL(f);
+  preview.style.display = 'flex';
+  drop.style.display = 'none';
+}
+
+drop.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', e => showFile(e.target.files[0]));
+['dragover','dragenter'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('drag'); }));
+['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('drag'); }));
+drop.addEventListener('drop', e => { if(e.dataTransfer.files.length){ fileInput.files = e.dataTransfer.files; showFile(e.dataTransfer.files[0]); } });
+document.getElementById('removeBtn').addEventListener('click', () => {
+  fileInput.value = ''; objectPath.value = '';
+  preview.style.display = 'none'; drop.style.display = 'block';
+});
+
+form.addEventListener('submit', async e => {
+  const f = fileInput.files[0];
+  if(!DIRECT_UPLOAD || !f){ return; }
+  e.preventDefault();
+  submitBtn.disabled = true; submitBtn.textContent = 'Uploading & processing…';
+  try {
+    const params = new URLSearchParams({filename: f.name, content_type: f.type});
+    const r = await fetch('/api/upload/url?' + params, {credentials:'same-origin'});
+    if(!r.ok){ const j = await r.json().catch(()=>({detail:'Upload failed'})); throw new Error(j.detail); }
+    const {uploadUrl, objectPath: path} = await r.json();
+    const put = await fetch(uploadUrl, {method:'PUT', headers:{'Content-Type':f.type}, body:f});
+    if(!put.ok){
+      let msg = await put.text().catch(()=>'');
+      try{ msg = JSON.parse(msg).message || msg; }catch(_){}
+      throw new Error('Storage rejected upload ('+put.status+'): '+msg);
+    }
+    objectPath.value = path;
+    fileInput.disabled = true;
+    form.submit();
+  } catch(err){
+    alert(err.message || 'Upload failed. Please try again.');
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Submit for verification →';
+  }
+});
+</script>
+{% endblock %}
