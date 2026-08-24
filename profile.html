@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Complete Profile{% endblock %}
+{% block crumb %}<strong>Account</strong> &nbsp;/&nbsp; Complete profile{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{% if user.profile_complete %}Edit your profile{% else %}Complete your profile{% endif %}</h1>
+    <p class="subtitle">{% if user.profile_complete %}Update your details below.{% else %}Tell us a bit about yourself to access the Review for Reward console.{% endif %}</p>
+  </div>
+</div>
+
+<div style="max-width:720px">
+  <div class="panel">
+    <div class="panel__head"><h3>Operator details</h3></div>
+    <div class="panel__body">
+      {% if error %}<div class="alert alert--error"><span class="ico">!</span><div>{{ error }}</div></div>{% endif %}
+      <form method="post" action="/profile">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 18px">
+          <div class="field" style="grid-column:1/-1">
+            <label for="full_name">Full name <span style="color:var(--envisys-red)">*</span></label>
+            <input type="text" id="full_name" name="full_name" maxlength="200" required
+                   value="{{ prefill_name }}" placeholder="e.g. Priya Sharma" autofocus>
+            <div class="field-hint">Shown on the leaderboard and in admin review records.</div>
+          </div>
+
+          <div class="field" style="grid-column:1/-1">
+            <label for="email">Email ID</label>
+            <input type="email" id="email" name="email" maxlength="320"
+                   value="{{ user.email or '' }}"
+                   {% if user.provider == 'google' and user.email %}readonly{% endif %}
+                   placeholder="e.g. priya@envisys.com"
+                   autocomplete="email">
+            {% if user.provider == 'google' and user.email %}
+            <div class="field-hint">Verified via Google sign-in. To change it, sign out and use a different Google account.</div>
+            {% else %}
+            <div class="field-hint">Used for review-status notifications.</div>
+            {% endif %}
+          </div>
+
+          <div class="field" style="grid-column:1/-1">
+            <label for="phone">Phone number</label>
+            <input type="tel" id="phone" name="phone" maxlength="32"
+                   value="{{ user.phone or '' }}"
+                   {% if user.provider == 'phone' and user.phone %}readonly{% endif %}
+                   placeholder="+91 98765 43210"
+                   autocomplete="tel">
+            {% if user.provider == 'phone' and user.phone %}
+            <div class="field-hint">Verified via SMS sign-in.</div>
+            {% else %}
+            <div class="field-hint">Include country code (e.g. +91 for India).</div>
+            {% endif %}
+          </div>
+
+          <div class="field">
+            <label for="department">Department</label>
+            <input type="text" id="department" name="department" maxlength="200"
+                   value="{{ user.department or '' }}"
+                   placeholder="e.g. Field Sales, Customer Success">
+          </div>
+
+          <div class="field">
+            <label for="role">Role / Designation</label>
+            <input type="text" id="role" name="role" maxlength="200"
+                   value="{{ user.role or '' }}"
+                   placeholder="e.g. Regional Manager">
+          </div>
+        </div>
+
+        <div style="margin-top:8px">
+          <button type="submit" class="btn btn--primary btn--lg">
+            {% if user.profile_complete %}Save changes{% else %}Continue to console →{% endif %}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
