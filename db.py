@@ -26,9 +26,11 @@ def _database_url() -> str:
         if "?" in url:
             url, _, _query = url.partition("?")
         if url.startswith("postgres://"):
-            url = url.replace("postgres://", "postgresql+psycopg2://", 1)
+            url = url.replace("postgres://", "postgresql+pg8000://", 1)
+        elif url.startswith("postgresql+psycopg2://"):
+            url = url.replace("postgresql+psycopg2://", "postgresql+pg8000://", 1)
         elif url.startswith("postgresql://"):
-            url = "postgresql+psycopg2://" + url[len("postgresql://"):]
+            url = "postgresql+pg8000://" + url[len("postgresql://"):]
         return url
     return f"sqlite:///{os.path.join(BASE_DIR, 'app.db')}"
 
@@ -123,13 +125,9 @@ _engine_kwargs = {"future": True, "pool_pre_ping": True}
 if DATABASE_URL.startswith("sqlite"):
     _engine_kwargs["connect_args"] = {"check_same_thread": False}
 else:
-    # Postgres behind pgbouncer: don't use prepared statements (which don't
-    # work over transaction pooling) and recycle idle connections.
+    # Postgres with pg8000 (pure-Python driver, works on Vercel serverless).
+    # pg8000 does not support psycopg2-specific connect_args like options/connect_timeout.
     _engine_kwargs["pool_recycle"] = 300
-    _engine_kwargs["connect_args"] = {
-        "connect_timeout": 10,
-        "options": "-c statement_cache_size=0",
-    }
     from sqlalchemy.pool import NullPool
     # For serverless functions a NullPool is safer (no shared state across
     # invocations). Locally you can remove this for pooling.
