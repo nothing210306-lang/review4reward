@@ -22,16 +22,20 @@ def _load_dotenv() -> None:
 
 
 _load_dotenv()
-UPLOAD_DIR = BASE_DIR / "uploads"
-# Only used for local disk-fallback storage. Serverless (Vercel) has a
-# read-only filesystem, so don't try to create it there — the app uses
-# Supabase Storage instead when env vars are present.
-if not os.environ.get("VERCEL"):
+if os.environ.get("VERCEL") or os.environ.get("SERVERLESS"):
+    UPLOAD_DIR = Path("/tmp/uploads")
+    try:
+        UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        pass
+    DB_PATH = Path("/tmp/app.db")
+else:
+    UPLOAD_DIR = BASE_DIR / "uploads"
     try:
         UPLOAD_DIR.mkdir(exist_ok=True)
     except OSError:
         pass
-DB_PATH = BASE_DIR / "app.db"
+    DB_PATH = BASE_DIR / "app.db"
 
 
 def _env(key: str, default: str = "") -> str:
