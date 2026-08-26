@@ -44,7 +44,7 @@ PUBLIC_URL = _env("PUBLIC_URL")  # may be empty; filled at runtime from request
 
 ADMIN_EMAILS = {
     e.strip().lower()
-    for e in _env("ADMIN_EMAILS", "nothing210306@gmail.com").split(",")
+    for e in _env("ADMIN_EMAILS", "process-optimization@envisystech.com").split(",")
     if e.strip()
 }
 

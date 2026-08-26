@@ -451,7 +451,8 @@ async def google_callback(
     audit(db, request, "signin", f"google {email}", user=user)
     db.commit()
 
-    response = RedirectResponse("/profile" if is_new or not user.profile_complete else "/", status_code=303)
+    target = "/admin" if user.is_admin else ("/profile" if is_new or not user.profile_complete else "/")
+    response = RedirectResponse(target, status_code=303)
     response.delete_cookie("g_oauth_state")
     auth.create_session_cookie(response, user.id, secure=base_url(request).startswith("https"))
     return response
@@ -487,7 +488,8 @@ def google_dev(
     user.last_login_at = utcnow()
     audit(db, request, "signin_dev", f"google {clean}", user=user)
     db.commit()
-    response = RedirectResponse("/profile" if is_new or not user.profile_complete else "/", status_code=303)
+    target = "/admin" if user.is_admin else ("/profile" if is_new or not user.profile_complete else "/")
+    response = RedirectResponse(target, status_code=303)
     auth.create_session_cookie(response, user.id, secure=base_url(request).startswith("https"))
     return response
 
@@ -609,7 +611,8 @@ def phone_verify(
     audit(db, request, "signin", f"phone {normalized}", user=user)
     db.commit()
 
-    response = RedirectResponse("/profile" if is_new or not user.profile_complete else "/", status_code=303)
+    target = "/admin" if user.is_admin else ("/profile" if is_new or not user.profile_complete else "/")
+    response = RedirectResponse(target, status_code=303)
     auth.create_session_cookie(response, user.id, secure=base_url(request).startswith("https"))
     return response
 
@@ -668,7 +671,8 @@ async def firebase_signin(
     audit(db, request, "signin", f"phone {phone} via Firebase", user=user)
     db.commit()
 
-    response = JSONResponse({"ok": True, "redirect": "/profile" if is_new or not user.profile_complete else "/"})
+    target = "/admin" if user.is_admin else ("/profile" if is_new or not user.profile_complete else "/")
+    response = JSONResponse({"ok": True, "redirect": target})
     auth.create_session_cookie(response, user.id, secure=base_url(request).startswith("https"))
     return response
 
